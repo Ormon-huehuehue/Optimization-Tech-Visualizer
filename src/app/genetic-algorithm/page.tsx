@@ -54,12 +54,29 @@ export default function GeneticAlgorithmPage() {
     setGeneration(0);
   }, [functionExpression, mutationRate, populationSize, getFitnessFunction]);
 
+  // Update GA parameters when inputs change
+  useEffect(() => {
+    if (ga) {
+      const fitnessFunc = getFitnessFunction(functionExpression);
+      const gaFitnessFunction = (genes: number[]) => fitnessFunc(genes[0]);
+      
+      ga.fitnessFunction = gaFitnessFunction;
+      ga.mutationRate = mutationRate;
+      ga.populationSize = populationSize; // Note: changing pop size might require re-init or handling in evolve
+      
+      // Re-evaluate fitness of current population with new function
+      ga.population.forEach(ind => {
+        ind.fitness = gaFitnessFunction(ind.genes);
+      });
+      setPopulation([...ga.population]);
+      setBestFitness(ga.getBest().fitness);
+    }
+  }, [functionExpression, mutationRate, populationSize, ga, getFitnessFunction]);
+
   // Initial setup
   useEffect(() => {
     initializeGA();
-  }, []); // Run once on mount, subsequent updates handled by Reset/Apply logic if we had an Apply button. 
-  // For now, changing params while running might be tricky, so let's stick to Reset to apply changes or apply immediately if stopped.
-  // Actually, the user might expect changes to apply on Reset.
+  }, []); // Run once on mount
 
   const evolve = useCallback(() => {
     if (!ga) return;

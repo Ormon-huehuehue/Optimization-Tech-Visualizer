@@ -84,7 +84,7 @@ export function GACanvas({
     // Draw population
     population.forEach((ind) => {
       const x = ind.genes[0]; // Assuming 1D gene
-      const y = ind.fitness;
+      const y = fitnessFunction(x); // Calculate current fitness for visualization
       
       const cx = mapX(x);
       const cy = mapY(y);
@@ -101,20 +101,22 @@ export function GACanvas({
 
     // Draw best individual highlight
     if (population.length > 0) {
-        // Find best in current population (or pass it in)
-        // Assuming population is sorted or we just highlight the one with bestFitness if we find it
-        // For now, let's just highlight the one with max fitness in this render cycle
+        // Find best in current population based on CURRENT fitness function
         let currentBest = population[0];
+        let maxFitness = fitnessFunction(currentBest.genes[0]);
+        
         for(const p of population) {
-            if(p.fitness > currentBest.fitness) currentBest = p;
+            const f = fitnessFunction(p.genes[0]);
+            if(f > maxFitness) {
+                maxFitness = f;
+                currentBest = p;
+            }
         }
         
         const bx = mapX(currentBest.genes[0]);
-        const by = mapY(currentBest.fitness);
+        const by = mapY(maxFitness);
         
         ctx.beginPath();
-        ctx.strokeStyle = "#ef4444"; // Red for best (or maybe orange as per image?)
-        // Image had orange accents. Let's use orange.
         ctx.strokeStyle = "#f97316"; 
         ctx.lineWidth = 2;
         ctx.arc(bx, by, 8, 0, Math.PI * 2);
