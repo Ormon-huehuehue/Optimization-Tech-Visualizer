@@ -119,7 +119,7 @@ export default function GeneticAlgorithmPage() {
         if (isRunningRef.current) {
           requestRef.current = requestAnimationFrame(animate);
         }
-      }, 50); 
+      }, 200); 
     }
   }, [evolve]);
 
