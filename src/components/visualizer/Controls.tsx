@@ -75,36 +75,8 @@ export function Controls({
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <div className="flex flex-col space-y-2">
-          <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-            Function f(x)
-          </label>
-          <input
-            type="text"
-            value={functionExpression}
-            onChange={(e) => onFunctionChange(e.target.value)}
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            placeholder="x * sin(10 * x)"
-            disabled={isRunning}
-          />
-        </div>
-        <div className="flex flex-col space-y-2">
-          <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-            Mutation Rate ({mutationRate})
-          </label>
-          <input
-            type="range"
-            min="0"
-            max="1"
-            step="0.01"
-            value={mutationRate}
-            onChange={(e) => onMutationRateChange(parseFloat(e.target.value))}
-            className="w-full"
-            disabled={isRunning}
-          />
-        </div>
-        <div className="flex flex-col space-y-2">
+      <div className="grid gap-8 md:grid-cols-3 pt-4">
+        <div className="flex flex-col space-y-6">
           <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
             Population Size ({populationSize})
           </label>
@@ -115,7 +87,35 @@ export function Controls({
             step="10"
             value={populationSize}
             onChange={(e) => onPopulationSizeChange(parseInt(e.target.value))}
-            className="w-full"
+            className="w-full cursor-pointer accent-primary"
+            disabled={isRunning}
+          />
+        </div>
+        <div className="flex flex-col space-y-6">
+          <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+            Mutation Rate ({mutationRate})
+          </label>
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.01"
+            value={mutationRate}
+            onChange={(e) => onMutationRateChange(parseFloat(e.target.value))}
+            className="w-full cursor-pointer accent-primary"
+            disabled={isRunning}
+          />
+        </div>
+        <div className="flex flex-col space-y-3">
+          <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+            Function f(x)
+          </label>
+          <input
+            type="text"
+            value={functionExpression}
+            onChange={(e) => onFunctionChange(e.target.value)}
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            placeholder="x * sin(10 * x)"
             disabled={isRunning}
           />
         </div>
