@@ -62,7 +62,27 @@ export default function GeneticAlgorithmPage() {
       
       ga.fitnessFunction = gaFitnessFunction;
       ga.mutationRate = mutationRate;
-      ga.populationSize = populationSize; // Note: changing pop size might require re-init or handling in evolve
+      
+      // Handle population resizing
+      if (populationSize !== ga.populationSize) {
+          const oldSize = ga.populationSize;
+          ga.populationSize = populationSize;
+          
+          if (populationSize > oldSize) {
+              // Add new individuals
+              const diff = populationSize - oldSize;
+              for (let i = 0; i < diff; i++) {
+                  const genes = Array.from({ length: 1 }, () => Math.random() * (MAX_X - MIN_X) + MIN_X);
+                  ga.population.push({
+                      genes,
+                      fitness: gaFitnessFunction(genes)
+                  });
+              }
+          } else {
+              // Truncate population
+              ga.population = ga.population.slice(0, populationSize);
+          }
+      }
       
       // Re-evaluate fitness of current population with new function
       ga.population.forEach(ind => {
