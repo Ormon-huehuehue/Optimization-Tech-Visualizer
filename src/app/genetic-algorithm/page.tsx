@@ -5,14 +5,10 @@ import { GeneticAlgorithm, Individual } from "@/lib/genetic-algorithm";
 import { GACanvas } from "@/components/visualizer/GACanvas";
 import { Controls } from "@/components/visualizer/Controls";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { evaluate } from "mathjs";
 
-// Define the fitness function (1D optimization)
-// f(x) = x * sin(10 * x) + x * cos(2 * x) in range [0, 5]
 const MIN_X = 0;
 const MAX_X = 5;
-const fitnessFunction = (x: number) => x * Math.sin(10 * x) + x * Math.cos(2 * x);
-// Wrapper for GA which expects array of genes
-const gaFitnessFunction = (genes: number[]) => fitnessFunction(genes[0]);
 
 export default function GeneticAlgorithmPage() {
   const [ga, setGa] = useState<GeneticAlgorithm | null>(null);
@@ -22,11 +18,30 @@ export default function GeneticAlgorithmPage() {
   const [isRunning, setIsRunning] = useState(false);
   const requestRef = useRef<number | null>(null);
 
+  // User Controls State
+  const [functionExpression, setFunctionExpression] = useState("x * sin(10 * x) + x * cos(2 * x)");
+  const [mutationRate, setMutationRate] = useState(0.05);
+  const [populationSize, setPopulationSize] = useState(50);
+
+  // Safe fitness function evaluation
+  const getFitnessFunction = useCallback((expression: string) => {
+    return (x: number) => {
+      try {
+        return evaluate(expression, { x });
+      } catch (e) {
+        return 0; // Fallback for invalid expression
+      }
+    };
+  }, []);
+
   // Initialize GA
-  useEffect(() => {
+  const initializeGA = useCallback(() => {
+    const fitnessFunc = getFitnessFunction(functionExpression);
+    const gaFitnessFunction = (genes: number[]) => fitnessFunc(genes[0]);
+
     const newGa = new GeneticAlgorithm(
-      50,    // Population size
-      0.05,  // Mutation rate
+      populationSize,
+      mutationRate,
       0.5,   // Crossover rate
       2,     // Elitism count
       1,     // Gene length (1D)
@@ -36,7 +51,15 @@ export default function GeneticAlgorithmPage() {
     setGa(newGa);
     setPopulation([...newGa.population]);
     setBestFitness(newGa.getBest().fitness);
-  }, []);
+    setGeneration(0);
+  }, [functionExpression, mutationRate, populationSize, getFitnessFunction]);
+
+  // Initial setup
+  useEffect(() => {
+    initializeGA();
+  }, []); // Run once on mount, subsequent updates handled by Reset/Apply logic if we had an Apply button. 
+  // For now, changing params while running might be tricky, so let's stick to Reset to apply changes or apply immediately if stopped.
+  // Actually, the user might expect changes to apply on Reset.
 
   const evolve = useCallback(() => {
     if (!ga) return;
@@ -46,15 +69,22 @@ export default function GeneticAlgorithmPage() {
     setBestFitness(ga.getBest().fitness);
   }, [ga]);
 
+  const isRunningRef = useRef(isRunning);
+
+  useEffect(() => {
+    isRunningRef.current = isRunning;
+  }, [isRunning]);
+
   const animate = useCallback(() => {
-    if (isRunning) {
+    if (isRunningRef.current) {
       evolve();
-      // Slow down animation slightly for visibility
       setTimeout(() => {
+        if (isRunningRef.current) {
           requestRef.current = requestAnimationFrame(animate);
+        }
       }, 50); 
     }
-  }, [isRunning, evolve]);
+  }, [evolve]);
 
   useEffect(() => {
     if (isRunning) {
@@ -71,12 +101,7 @@ export default function GeneticAlgorithmPage() {
   const handleStop = () => setIsRunning(false);
   const handleReset = () => {
     setIsRunning(false);
-    if (ga) {
-      ga.initializePopulation(MIN_X, MAX_X);
-      setPopulation([...ga.population]);
-      setGeneration(0);
-      setBestFitness(ga.getBest().fitness);
-    }
+    initializeGA();
   };
 
   return (
@@ -98,7 +123,7 @@ export default function GeneticAlgorithmPage() {
               population={population}
               generation={generation}
               bestFitness={bestFitness}
-              fitnessFunction={fitnessFunction}
+              fitnessFunction={getFitnessFunction(functionExpression)}
               minX={MIN_X}
               maxX={MAX_X}
             />
@@ -112,6 +137,12 @@ export default function GeneticAlgorithmPage() {
           onReset={handleReset}
           generation={generation}
           bestFitness={bestFitness}
+          functionExpression={functionExpression}
+          onFunctionChange={setFunctionExpression}
+          mutationRate={mutationRate}
+          onMutationRateChange={setMutationRate}
+          populationSize={populationSize}
+          onPopulationSizeChange={setPopulationSize}
         />
 
         <div className="grid gap-4 md:grid-cols-3">
@@ -120,7 +151,7 @@ export default function GeneticAlgorithmPage() {
                 <CardTitle className="text-sm">Population Size</CardTitle>
             </CardHeader>
             <CardContent>
-                <div className="text-2xl font-mono">50</div>
+                <div className="text-2xl font-mono">{populationSize}</div>
             </CardContent>
            </Card>
            <Card>
@@ -128,7 +159,7 @@ export default function GeneticAlgorithmPage() {
                 <CardTitle className="text-sm">Mutation Rate</CardTitle>
             </CardHeader>
             <CardContent>
-                <div className="text-2xl font-mono">5%</div>
+                <div className="text-2xl font-mono">{(mutationRate * 100).toFixed(0)}%</div>
             </CardContent>
            </Card>
            <Card>
@@ -136,8 +167,8 @@ export default function GeneticAlgorithmPage() {
                 <CardTitle className="text-sm">Function</CardTitle>
             </CardHeader>
             <CardContent>
-                <div className="text-sm font-mono text-muted-foreground">
-                    f(x) = x·sin(10x) + x·cos(2x)
+                <div className="text-sm font-mono text-muted-foreground truncate" title={functionExpression}>
+                    f(x) = {functionExpression}
                 </div>
             </CardContent>
            </Card>
