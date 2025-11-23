@@ -14,7 +14,6 @@ import {
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Genetic Algorithm", href: "/genetic-algorithm", icon: Dna },
-  { name: "Simulated Annealing", href: "/simulated-annealing", icon: BarChart3 }, // Placeholder
   { name: "Documentation", href: "/docs", icon: BookOpen },
   { name: "Settings", href: "/settings", icon: Settings },
 ];

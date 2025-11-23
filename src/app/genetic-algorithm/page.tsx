@@ -5,6 +5,7 @@ import { GeneticAlgorithm, Individual } from "@/lib/genetic-algorithm";
 import { GACanvas } from "@/components/visualizer/GACanvas";
 import { Controls } from "@/components/visualizer/Controls";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { GeneticAlgorithmDocs } from "@/components/visualizer/GeneticAlgorithmDocs";
 import { evaluate } from "mathjs";
 
 const MIN_X = 0;
@@ -211,6 +212,8 @@ export default function GeneticAlgorithmPage() {
            </Card>
         </div>
       </div>
+      
+      <GeneticAlgorithmDocs />
     </div>
   );
 }
