@@ -14,8 +14,6 @@ import {
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Genetic Algorithm", href: "/genetic-algorithm", icon: Dna },
-  { name: "Documentation", href: "/docs", icon: BookOpen },
-  { name: "Settings", href: "/settings", icon: Settings },
 ];
 
 export function Sidebar() {
