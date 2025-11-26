@@ -8,8 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { GeneticAlgorithmDocs } from "@/components/visualizer/GeneticAlgorithmDocs";
 import { evaluate } from "mathjs";
 
-const MIN_X = 0;
-const MAX_X = 5;
+const DEFAULT_MIN_X = 0;
+const DEFAULT_MAX_X = 5;
 
 export default function GeneticAlgorithmPage() {
   const [ga, setGa] = useState<GeneticAlgorithm | null>(null);
@@ -30,6 +30,9 @@ export default function GeneticAlgorithmPage() {
   );
   const [mutationRate, setMutationRate] = useState(0.05);
   const [populationSize, setPopulationSize] = useState(50);
+  const [optimizationGoal, setOptimizationGoal] = useState<"maximize" | "minimize">("maximize");
+  const [minX, setMinX] = useState(DEFAULT_MIN_X);
+  const [maxX, setMaxX] = useState(DEFAULT_MAX_X);
 
   // Safe fitness function evaluation
   const getFitnessFunction = useCallback((expression: string) => {
@@ -53,9 +56,10 @@ export default function GeneticAlgorithmPage() {
       0.5, // Crossover rate
       2, // Elitism count
       1, // Gene length (1D)
-      gaFitnessFunction
+      gaFitnessFunction,
+      optimizationGoal === "minimize"
     );
-    newGa.initializePopulation(MIN_X, MAX_X);
+    newGa.initializePopulation(minX, maxX);
     setGa(newGa);
     setPopulation([...newGa.population]);
     setBestFitness(newGa.getBest().fitness);
@@ -63,7 +67,7 @@ export default function GeneticAlgorithmPage() {
     generationRef.current = 0;
     setFitnessHistory([]);
     setConvergedGeneration(null);
-  }, [functionExpression, mutationRate, populationSize, getFitnessFunction]);
+  }, [functionExpression, mutationRate, populationSize, getFitnessFunction, optimizationGoal, minX, maxX]);
 
   // Update GA parameters when inputs change
   useEffect(() => {
@@ -73,6 +77,9 @@ export default function GeneticAlgorithmPage() {
 
       ga.fitnessFunction = gaFitnessFunction;
       ga.mutationRate = mutationRate;
+      ga.minimize = optimizationGoal === "minimize";
+      ga.minX = minX;
+      ga.maxX = maxX;
 
       // Handle population resizing
       if (populationSize !== ga.populationSize) {
@@ -85,7 +92,7 @@ export default function GeneticAlgorithmPage() {
           for (let i = 0; i < diff; i++) {
             const genes = Array.from(
               { length: 1 },
-              () => Math.random() * (MAX_X - MIN_X) + MIN_X
+              () => Math.random() * (maxX - minX) + minX
             );
             ga.population.push({
               genes,
@@ -111,6 +118,9 @@ export default function GeneticAlgorithmPage() {
     populationSize,
     ga,
     getFitnessFunction,
+    optimizationGoal,
+    minX,
+    maxX
   ]);
 
   // Initial setup
@@ -135,7 +145,7 @@ export default function GeneticAlgorithmPage() {
       }
 
       if (newHistory.length >= 20) {
-        const improvement = newHistory[newHistory.length - 1] - newHistory[0];
+        const improvement = Math.abs(newHistory[newHistory.length - 1] - newHistory[0]);
         if (improvement < 0.001 && isRunningRef.current) {
           setIsRunning(false);
           setConvergedGeneration(generationRef.current);
@@ -186,7 +196,7 @@ export default function GeneticAlgorithmPage() {
         <h1 className="text-3xl font-bold tracking-tight">Genetic Algorithm</h1>
         <p className="text-muted-foreground">
           Visualizing function optimization. The algorithm tries to find the
-          maximum value (peak) of the function.
+          optimal value (peak or valley) of the function.
         </p>
       </div>
 
@@ -201,8 +211,8 @@ export default function GeneticAlgorithmPage() {
               generation={generation}
               bestFitness={bestFitness}
               fitnessFunction={getFitnessFunction(functionExpression)}
-              minX={MIN_X}
-              maxX={MAX_X}
+              minX={minX}
+              maxX={maxX}
             />
           </CardContent>
         </Card>
@@ -221,6 +231,12 @@ export default function GeneticAlgorithmPage() {
           populationSize={populationSize}
           onPopulationSizeChange={setPopulationSize}
           convergedGeneration={convergedGeneration}
+          optimizationGoal={optimizationGoal}
+          onOptimizationGoalChange={setOptimizationGoal}
+          minX={minX}
+          onMinXChange={setMinX}
+          maxX={maxX}
+          onMaxXChange={setMaxX}
         />
 
         <div className="grid gap-4 md:grid-cols-3">

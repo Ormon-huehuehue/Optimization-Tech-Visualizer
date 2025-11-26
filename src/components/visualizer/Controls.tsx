@@ -22,6 +22,12 @@ interface ControlsProps {
   populationSize: number;
   onPopulationSizeChange: (value: number) => void;
   convergedGeneration: number | null;
+  optimizationGoal: "maximize" | "minimize";
+  onOptimizationGoalChange: (value: "maximize" | "minimize") => void;
+  minX: number;
+  onMinXChange: (value: number) => void;
+  maxX: number;
+  onMaxXChange: (value: number) => void;
 }
 
 export function Controls({
@@ -38,6 +44,12 @@ export function Controls({
   populationSize,
   onPopulationSizeChange,
   convergedGeneration,
+  optimizationGoal,
+  onOptimizationGoalChange,
+  minX,
+  onMinXChange,
+  maxX,
+  onMaxXChange,
 }: ControlsProps) {
   return (
     <div className="flex flex-col space-y-4 rounded-xl border border-border bg-card p-4 shadow-sm">
@@ -126,6 +138,56 @@ export function Controls({
             placeholder="x * sin(10 * x)"
             disabled={isRunning}
           />
+        </div>
+      </div>
+      
+      <div className="grid gap-8 md:grid-cols-3 pt-4 border-t mt-4">
+        <div className="flex flex-col space-y-3">
+            <label className="text-sm font-medium leading-none">Optimization Goal</label>
+            <div className="flex items-center space-x-2">
+                <button
+                    onClick={() => onOptimizationGoalChange("maximize")}
+                    disabled={isRunning}
+                    className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                        optimizationGoal === "maximize" 
+                        ? "bg-primary text-primary-foreground" 
+                        : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                    }`}
+                >
+                    Maximize
+                </button>
+                <button
+                    onClick={() => onOptimizationGoalChange("minimize")}
+                    disabled={isRunning}
+                    className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                        optimizationGoal === "minimize" 
+                        ? "bg-primary text-primary-foreground" 
+                        : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                    }`}
+                >
+                    Minimize
+                </button>
+            </div>
+        </div>
+        <div className="flex flex-col space-y-3">
+            <label className="text-sm font-medium leading-none">Min X</label>
+            <input
+                type="number"
+                value={isNaN(minX) ? "" : minX}
+                onChange={(e) => onMinXChange(parseFloat(e.target.value))}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={isRunning}
+            />
+        </div>
+        <div className="flex flex-col space-y-3">
+            <label className="text-sm font-medium leading-none">Max X</label>
+            <input
+                type="number"
+                value={isNaN(maxX) ? "" : maxX}
+                onChange={(e) => onMaxXChange(parseFloat(e.target.value))}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={isRunning}
+            />
         </div>
       </div>
     </div>

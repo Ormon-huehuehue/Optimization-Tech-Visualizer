@@ -11,6 +11,9 @@ export class GeneticAlgorithm {
   elitismCount: number;
   geneLength: number;
   fitnessFunction: (genes: number[]) => number;
+  minimize: boolean;
+  minX: number = 0;
+  maxX: number = 1;
 
   constructor(
     populationSize: number,
@@ -18,7 +21,8 @@ export class GeneticAlgorithm {
     crossoverRate: number,
     elitismCount: number,
     geneLength: number,
-    fitnessFunction: (genes: number[]) => number
+    fitnessFunction: (genes: number[]) => number,
+    minimize: boolean = false
   ) {
     this.populationSize = populationSize;
     this.mutationRate = mutationRate;
@@ -26,10 +30,13 @@ export class GeneticAlgorithm {
     this.elitismCount = elitismCount;
     this.geneLength = geneLength;
     this.fitnessFunction = fitnessFunction;
+    this.minimize = minimize;
     this.population = [];
   }
 
   initializePopulation(min: number = 0, max: number = 1) {
+    this.minX = min;
+    this.maxX = max;
     this.population = [];
     for (let i = 0; i < this.populationSize; i++) {
       const genes = Array.from({ length: this.geneLength }, () => Math.random() * (max - min) + min);
@@ -41,8 +48,10 @@ export class GeneticAlgorithm {
   }
 
   evolve() {
-    // Sort by fitness (descending)
-    this.population.sort((a, b) => b.fitness - a.fitness);
+    // Sort by fitness
+    this.population.sort((a, b) => {
+        return this.minimize ? a.fitness - b.fitness : b.fitness - a.fitness;
+    });
 
     const newPopulation: Individual[] = [];
 
@@ -70,8 +79,12 @@ export class GeneticAlgorithm {
     let best: Individual | null = null;
     for (let i = 0; i < tournamentSize; i++) {
       const ind = this.population[Math.floor(Math.random() * this.populationSize)];
-      if (!best || ind.fitness > best.fitness) {
+      if (!best) {
         best = ind;
+      } else if (this.minimize) {
+        if (ind.fitness < best.fitness) best = ind;
+      } else {
+        if (ind.fitness > best.fitness) best = ind;
       }
     }
     return best!;
@@ -95,12 +108,21 @@ export class GeneticAlgorithm {
     for (let i = 0; i < this.geneLength; i++) {
       if (Math.random() < this.mutationRate) {
         // Add small random noise for continuous values
+        // Add small random noise for continuous values
         individual.genes[i] += (Math.random() - 0.5) * 0.5; // Mutation step size
+        
+        // Clamp to bounds
+        individual.genes[i] = Math.max(this.minX, Math.min(this.maxX, individual.genes[i]));
       }
     }
   }
   
   getBest(): Individual {
-    return this.population.reduce((prev, current) => (prev.fitness > current.fitness) ? prev : current);
+    return this.population.reduce((prev, current) => {
+        if (this.minimize) {
+            return (prev.fitness < current.fitness) ? prev : current;
+        }
+        return (prev.fitness > current.fitness) ? prev : current;
+    });
   }
 }
