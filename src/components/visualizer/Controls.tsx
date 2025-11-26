@@ -21,6 +21,7 @@ interface ControlsProps {
   onMutationRateChange: (value: number) => void;
   populationSize: number;
   onPopulationSizeChange: (value: number) => void;
+  convergedGeneration: number | null;
 }
 
 export function Controls({
@@ -36,6 +37,7 @@ export function Controls({
   onMutationRateChange,
   populationSize,
   onPopulationSizeChange,
+  convergedGeneration,
 }: ControlsProps) {
   return (
     <div className="flex flex-col space-y-4 rounded-xl border border-border bg-card p-4 shadow-sm">
@@ -72,6 +74,12 @@ export function Controls({
             <span className="text-muted-foreground">Best Fitness</span>
             <span className="font-bold font-mono">{bestFitness.toFixed(4)}</span>
           </div>
+          {convergedGeneration !== null && (
+            <div className="flex flex-col text-orange-500 animate-pulse">
+              <span className="text-sm font-medium">Converged at</span>
+              <span className="font-bold font-mono">Gen {convergedGeneration}</span>
+            </div>
+          )}
         </div>
       </div>
 

@@ -17,10 +17,17 @@ export default function GeneticAlgorithmPage() {
   const [generation, setGeneration] = useState(0);
   const [bestFitness, setBestFitness] = useState(-Infinity);
   const [isRunning, setIsRunning] = useState(false);
+  const [fitnessHistory, setFitnessHistory] = useState<number[]>([]);
+  const [convergedGeneration, setConvergedGeneration] = useState<number | null>(
+    null
+  );
   const requestRef = useRef<number | null>(null);
+  const generationRef = useRef(0);
 
   // User Controls State
-  const [functionExpression, setFunctionExpression] = useState("x * sin(10 * x) + x * cos(2 * x)");
+  const [functionExpression, setFunctionExpression] = useState(
+    "x * sin(10 * x) + x * cos(2 * x)"
+  );
   const [mutationRate, setMutationRate] = useState(0.05);
   const [populationSize, setPopulationSize] = useState(50);
 
@@ -43,9 +50,9 @@ export default function GeneticAlgorithmPage() {
     const newGa = new GeneticAlgorithm(
       populationSize,
       mutationRate,
-      0.5,   // Crossover rate
-      2,     // Elitism count
-      1,     // Gene length (1D)
+      0.5, // Crossover rate
+      2, // Elitism count
+      1, // Gene length (1D)
       gaFitnessFunction
     );
     newGa.initializePopulation(MIN_X, MAX_X);
@@ -53,6 +60,9 @@ export default function GeneticAlgorithmPage() {
     setPopulation([...newGa.population]);
     setBestFitness(newGa.getBest().fitness);
     setGeneration(0);
+    generationRef.current = 0;
+    setFitnessHistory([]);
+    setConvergedGeneration(null);
   }, [functionExpression, mutationRate, populationSize, getFitnessFunction]);
 
   // Update GA parameters when inputs change
@@ -60,39 +70,48 @@ export default function GeneticAlgorithmPage() {
     if (ga) {
       const fitnessFunc = getFitnessFunction(functionExpression);
       const gaFitnessFunction = (genes: number[]) => fitnessFunc(genes[0]);
-      
+
       ga.fitnessFunction = gaFitnessFunction;
       ga.mutationRate = mutationRate;
-      
+
       // Handle population resizing
       if (populationSize !== ga.populationSize) {
-          const oldSize = ga.populationSize;
-          ga.populationSize = populationSize;
-          
-          if (populationSize > oldSize) {
-              // Add new individuals
-              const diff = populationSize - oldSize;
-              for (let i = 0; i < diff; i++) {
-                  const genes = Array.from({ length: 1 }, () => Math.random() * (MAX_X - MIN_X) + MIN_X);
-                  ga.population.push({
-                      genes,
-                      fitness: gaFitnessFunction(genes)
-                  });
-              }
-          } else {
-              // Truncate population
-              ga.population = ga.population.slice(0, populationSize);
+        const oldSize = ga.populationSize;
+        ga.populationSize = populationSize;
+
+        if (populationSize > oldSize) {
+          // Add new individuals
+          const diff = populationSize - oldSize;
+          for (let i = 0; i < diff; i++) {
+            const genes = Array.from(
+              { length: 1 },
+              () => Math.random() * (MAX_X - MIN_X) + MIN_X
+            );
+            ga.population.push({
+              genes,
+              fitness: gaFitnessFunction(genes),
+            });
           }
+        } else {
+          // Truncate population
+          ga.population = ga.population.slice(0, populationSize);
+        }
       }
-      
+
       // Re-evaluate fitness of current population with new function
-      ga.population.forEach(ind => {
+      ga.population.forEach((ind) => {
         ind.fitness = gaFitnessFunction(ind.genes);
       });
       setPopulation([...ga.population]);
       setBestFitness(ga.getBest().fitness);
     }
-  }, [functionExpression, mutationRate, populationSize, ga, getFitnessFunction]);
+  }, [
+    functionExpression,
+    mutationRate,
+    populationSize,
+    ga,
+    getFitnessFunction,
+  ]);
 
   // Initial setup
   useEffect(() => {
@@ -103,8 +122,27 @@ export default function GeneticAlgorithmPage() {
     if (!ga) return;
     ga.evolve();
     setPopulation([...ga.population]);
-    setGeneration((g) => g + 1);
-    setBestFitness(ga.getBest().fitness);
+    generationRef.current += 1;
+    setGeneration(generationRef.current);
+    const currentBestFitness = ga.getBest().fitness;
+    setBestFitness(currentBestFitness);
+
+    // Convergence Check
+    setFitnessHistory((prev) => {
+      const newHistory = [...prev, currentBestFitness];
+      if (newHistory.length > 20) {
+        newHistory.shift(); // Keep last 20
+      }
+
+      if (newHistory.length >= 20) {
+        const improvement = newHistory[newHistory.length - 1] - newHistory[0];
+        if (improvement < 0.001 && isRunningRef.current) {
+          setIsRunning(false);
+          setConvergedGeneration(generationRef.current);
+        }
+      }
+      return newHistory;
+    });
   }, [ga]);
 
   const isRunningRef = useRef(isRunning);
@@ -120,7 +158,7 @@ export default function GeneticAlgorithmPage() {
         if (isRunningRef.current) {
           requestRef.current = requestAnimationFrame(animate);
         }
-      }, 200); 
+      }, 200);
     }
   }, [evolve]);
 
@@ -147,7 +185,8 @@ export default function GeneticAlgorithmPage() {
       <div className="flex flex-col space-y-2">
         <h1 className="text-3xl font-bold tracking-tight">Genetic Algorithm</h1>
         <p className="text-muted-foreground">
-          Visualizing function optimization. The algorithm tries to find the maximum value (peak) of the function.
+          Visualizing function optimization. The algorithm tries to find the
+          maximum value (peak) of the function.
         </p>
       </div>
 
@@ -181,38 +220,44 @@ export default function GeneticAlgorithmPage() {
           onMutationRateChange={setMutationRate}
           populationSize={populationSize}
           onPopulationSizeChange={setPopulationSize}
+          convergedGeneration={convergedGeneration}
         />
 
         <div className="grid gap-4 md:grid-cols-3">
-           <Card>
+          <Card>
             <CardHeader>
-                <CardTitle className="text-sm">Population Size</CardTitle>
+              <CardTitle className="text-sm">Population Size</CardTitle>
             </CardHeader>
             <CardContent>
-                <div className="text-2xl font-mono">{populationSize}</div>
+              <div className="text-2xl font-mono">{populationSize}</div>
             </CardContent>
-           </Card>
-           <Card>
+          </Card>
+          <Card>
             <CardHeader>
-                <CardTitle className="text-sm">Mutation Rate</CardTitle>
+              <CardTitle className="text-sm">Mutation Rate</CardTitle>
             </CardHeader>
             <CardContent>
-                <div className="text-2xl font-mono">{(mutationRate * 100).toFixed(0)}%</div>
+              <div className="text-2xl font-mono">
+                {(mutationRate * 100).toFixed(0)}%
+              </div>
             </CardContent>
-           </Card>
-           <Card>
+          </Card>
+          <Card>
             <CardHeader>
-                <CardTitle className="text-sm">Function</CardTitle>
+              <CardTitle className="text-sm">Function</CardTitle>
             </CardHeader>
             <CardContent>
-                <div className="text-sm font-mono text-muted-foreground truncate" title={functionExpression}>
-                    f(x) = {functionExpression}
-                </div>
+              <div
+                className="text-sm font-mono text-muted-foreground truncate"
+                title={functionExpression}
+              >
+                f(x) = {functionExpression}
+              </div>
             </CardContent>
-           </Card>
+          </Card>
         </div>
       </div>
-      
+
       <GeneticAlgorithmDocs />
     </div>
   );
